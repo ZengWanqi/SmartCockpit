@@ -1,0 +1,7 @@
+#Pycharm
+.idea/
+constants/__pycache__/
+#中间数据
+data/
+#资源文件
+resources/
