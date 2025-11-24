@@ -1,11 +1,12 @@
-from pathlib import Path            # 用于路径操作
-import logging                      # 用于日志记录
-import csv                          # 用于 CSV 文件读写（存储用户信息）
-import cv2                          # 摄像头操作和图像处理
-import dlib                         # 人脸检测
-import shutil                       # 用于文件夹删除操作
-from datetime import datetime       # 用于生成时间戳
+from pathlib import Path  # 用于路径操作
+import logging  # 用于日志记录
+import csv  # 用于 CSV 文件读写（存储用户信息）
+import cv2  # 摄像头操作和图像处理
+import dlib  # 人脸检测
+import shutil  # 用于文件夹删除操作
+from datetime import datetime  # 用于生成时间戳
 import constants.constants as constants  # 导入常量
+
 
 class FaceRegistration:
     def __init__(self):
@@ -69,10 +70,10 @@ class FaceRegistration:
         user_folder.mkdir(parents=True, exist_ok=True)
 
         default_seat_positions = {
-            "cushion_position": 500,            # 默认座垫位置
-            "seat_ud_position": 500,            # 默认座椅上下位置
-            "seat_fb_position": 500,            # 默认座椅前后位置
-            "backrest_position": 500            # 默认靠背位置
+            "cushion_position": 500,  # 默认座垫位置
+            "seat_ud_position": 500,  # 默认座椅上下位置
+            "seat_fb_position": 500,  # 默认座椅前后位置
+            "backrest_position": 500  # 默认靠背位置
         }
 
         # 写入 CSV
@@ -122,7 +123,10 @@ class FaceRegistration:
                     frame_counter += 1
                     face = faces[0]
                     x, y, w, h = face.left(), face.top(), face.width(), face.height()
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    padding = 20  # 可调整的扩展像素
+                    cv2.rectangle(frame, (max(x - padding, 0), max(y - padding, 0)),
+                                  (min(x + w + padding, frame.shape[1]), min(y + h + padding, frame.shape[0])),
+                                  (0, 255, 0), 2)
 
                     if count < max_count and frame_counter % 5 == 0:
                         y0, y1 = max(y, 0), max(y + h, 0)
@@ -153,10 +157,10 @@ class FaceRegistration:
 
 
 def main():
-
     registrar = FaceRegistration()
     result = registrar.collect_face_data(constants.DEFAULT_IMAGE_COUNT)
     print(result)
+
 
 if __name__ == "__main__":
     main()
