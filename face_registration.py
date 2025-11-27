@@ -5,7 +5,7 @@ import cv2  # 摄像头操作和图像处理
 import dlib  # 人脸检测
 import shutil  # 用于文件夹删除操作
 from datetime import datetime  # 用于生成时间戳
-import constants.constants as constants  # 导入常量
+import constants  # 导入常量
 
 
 class FaceRegistration:

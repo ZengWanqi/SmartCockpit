@@ -1,9 +1,9 @@
 import cv2
 import pandas as pd
 import numpy as np
-import constants.constants as constants
-import face_seat_control.face_seat_control as face_seat_control
-import face_feature_extract.face_feature_extract as face_feature_extract
+import constants
+import face_seat_control
+import face_feature_extract
 
 
 class face_recognition:

@@ -3,7 +3,7 @@ import pandas as pd  # 用于处理用户数据表格
 import serial  # 用于与座椅控制器进行串口通信
 import threading  # 用于多线程处理
 from serial.tools import list_ports  # 用于列出可用串口
-import constants.constants as constants  # 常量文件
+import constants  # 常量文件
 
 
 class FaceSeatControl:

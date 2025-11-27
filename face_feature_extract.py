@@ -5,7 +5,7 @@ import numpy as np
 import csv
 import pandas as pd
 from tqdm import tqdm
-import constants.constants as constants
+import constants
 
 
 class FaceFeatureExtractor:

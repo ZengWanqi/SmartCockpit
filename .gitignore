@@ -1,6 +1,6 @@
 #Pycharm
 .idea/
-constants/__pycache__/
+__pycache__/
 #中间数据
 data/
 #资源文件
