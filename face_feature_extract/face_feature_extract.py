@@ -11,13 +11,11 @@ import constants.constants as constants
 class FaceFeatureExtractor:
     def __init__(self):
         print("加载人脸检测和特征提取模型...")
-        self.detector = dlib.get_frontal_face_detector()
-        self.sp = dlib.shape_predictor(constants.FACE_LANDMARK_68_PREDICTOR_DAT_PATH)
-        self.facerec = dlib.face_recognition_model_v1(constants.FACE_RECOGNITION_RESNET_MODEL_V1_DAT_PATH)
-        self.data_dir = constants.DATA_DIR_PATH
-        # 打印数据目录路径，方便验证
-        print(f"数据目录：{self.data_dir}")
-        self.user_info = self.load_user_info()
+        self.detector = dlib.get_frontal_face_detector() # 使用dlib自带的人脸检测器
+        self.shape_predictor = dlib.shape_predictor(constants.FACE_LANDMARK_68_PREDICTOR_DAT_PATH) # 加载68点人脸标志预测模型
+        self.face_recognition_model = dlib.face_recognition_model_v1(constants.FACE_RECOGNITION_RESNET_MODEL_V1_DAT_PATH) # 加载人脸识别模型
+        self.data_dir = constants.DATA_DIR_PATH # 数据目录路径
+        self.user_info = self.load_user_info() # 加载用户信息
         print(f"成功加载 {len(self.user_info)} 条用户信息")
 
     @staticmethod
@@ -81,8 +79,8 @@ class FaceFeatureExtractor:
 
                 # 只取第一张检测到的人脸（避免多脸干扰）
                 d = dets[0]
-                shape = self.sp(gray, d)
-                face_descriptor = self.facerec.compute_face_descriptor(img, shape)
+                shape = self.shape_predictor(gray, d)
+                face_descriptor = self.face_recognition_model.compute_face_descriptor(img, shape)
                 user_features.append(np.array(face_descriptor))
 
             if user_features:
