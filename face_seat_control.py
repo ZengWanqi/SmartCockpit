@@ -204,6 +204,3 @@ def main():
     except RuntimeError as e:
         print(e)
 
-
-if __name__ == "__main__":
-    main()  # 运行主函数

@@ -1,4 +1,6 @@
 # ------------constants.py----------
+# 人脸头像框的颜色 (BGR 格式)
+FACE_BOX_COLOR = (0, 255, 0)  # 绿色
 
 # 数据目录名称
 DATA_DIR_NAME = "data"

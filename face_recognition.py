@@ -2,6 +2,7 @@ import cv2
 import pandas as pd
 import numpy as np
 import constants
+import utilities
 import face_seat_control
 import face_feature_extract
 
@@ -43,7 +44,7 @@ class face_recognition:
                 print("无法从摄像头读取视频帧")
                 break
             frame_count += 1  # 计数帧数
-            # 每隔 指定帧数 进行一次人脸识别
+            # 每隔 15帧 进行一次人脸识别
             if frame_count % constants.RECOGNITION_INTERVAL_FRAMES == 0 and not self.seat_controller.is_seat_adjusting:
                 gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # 转换为灰度图进行人脸检测
                 faces = self.feature_extractor.detector(gray)
@@ -61,11 +62,10 @@ class face_recognition:
                         self.seat_controller.send_user_to_seat_controller()
                     else:
                         print("未识别到匹配的用户")
+            # 绘制人脸框
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if len(self.feature_extractor.detector(gray)) > 0:
+                face = self.feature_extractor.detector(gray)[0]
+                face_box = (face.left(), face.top(), face.width(), face.height())
+                utilities.draw_face_box(frame, face_box)
 
-
-def main():
-    face_recognition()
-
-
-if __name__ == "__main__":
-    main()
