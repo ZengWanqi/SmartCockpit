@@ -2,7 +2,6 @@ import cv2
 import dlib
 import pandas as pd
 import constants
-from datetime import datetime
 
 
 class CommonContext:
@@ -17,11 +16,11 @@ class CommonContext:
         self.is_adjusting_seat = False  # 座椅调整状态标志
         try:
             self.features_df = pd.read_csv(constants.FEATURES_ALL_CSV_PATH)  # 读取特征数据
-        except (pd.errors.EmptyDataError,FileNotFoundError):
+        except (pd.errors.EmptyDataError, FileNotFoundError):
             self.features_df = pd.DataFrame()
         try:
             self.user_info_df = pd.read_csv(constants.USER_INFO_CSV_PATH)  # 读取用户信息数据
-        except (pd.errors.EmptyDataError,FileNotFoundError):
+        except (pd.errors.EmptyDataError, FileNotFoundError):
             self.user_info_df = pd.DataFrame()
         self.detector = dlib.get_frontal_face_detector()  # dlib人脸检测器
         self.camera = cv2.VideoCapture(constants.CAMERA_INDEX)  # 摄像头对象

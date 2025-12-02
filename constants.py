@@ -1,4 +1,3 @@
-# ------------constants.py----------
 # 人脸头像框的颜色 (BGR 格式)
 FACE_BOX_COLOR = (0, 255, 0)  # 绿色
 
@@ -23,8 +22,6 @@ DEFAULT_IMAGE_COUNT = 10
 # 摄像头索引，默认使用第一个摄像头
 CAMERA_INDEX = 0
 
-# ------------face_feature_extract_constants.py----------
-
 # 68点人脸关键点预测模型文件
 FACE_LANDMARK_68_PREDICTOR_DAT = 'shape_predictor_68_face_landmarks.dat'
 
@@ -39,8 +36,6 @@ FACE_RECOGNITION_RESNET_MODEL_V1_DAT_PATH = 'resources/dlib_face_recognition_res
 
 # 所有用户特征CSV文件路径
 FEATURES_ALL_CSV_PATH = 'data/features_all.csv'
-
-# --------------face_seat_control_constants.py----------
 
 # 串口波特率
 BAUDRATE = 115200
