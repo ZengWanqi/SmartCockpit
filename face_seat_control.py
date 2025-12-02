@@ -3,15 +3,16 @@ import pandas as pd  # 用于处理用户数据表格
 import serial  # 用于与座椅控制器进行串口通信
 import threading  # 用于多线程处理
 from serial.tools import list_ports  # 用于列出可用串口
-import constants.constants as constants  # 常量文件
+import constants  # 常量文件
+import utilities  # 导入公共工具模块
 
 
 class FaceSeatControl:
-    def __init__(self):
-        self.current_user = None  # 当前用户ID
-        self.is_seat_adjusting = False  # 座椅调整状态标志
-        self.serial_port = None  # 串口端口
-        self.serial_obj = None  # 初始化串口通信
+    def __init__(self, common_context: utilities.CommonContext = None):
+        self.current_user_id = common_context.current_user_id  # 当前用户ID
+        self.is_seat_adjusting = common_context.is_adjusting_seat  # 座椅调整状态标志
+        self.serial_port = common_context.serial_port  # 串口端口
+        self.serial_obj = common_context.serial_obj  # 初始化串口通信
 
     @staticmethod
     def find_serial_port():
@@ -93,9 +94,9 @@ class FaceSeatControl:
     def update_user_seat_position(self, seat_position):
         try:
             features_df = pd.read_csv(constants.FEATURES_ALL_CSV_PATH)  # 读取用户数据文件
-            user_row = features_df[features_df['user_id'] == self.current_user]  # 查找当前用户数据
+            user_row = features_df[features_df['user_id'] == self.current_user_id]  # 查找当前用户数据
             if user_row.empty:
-                print(f"未找到用户 {self.current_user} 的数据。")
+                print(f"未找到用户 {self.current_user_id} 的数据。")
                 return False
             # 更新座椅位置数据
             current_user_index = user_row.index[0]
@@ -104,10 +105,10 @@ class FaceSeatControl:
             features_df.at[current_user_index, 'seat_fb_position'] = seat_position.get('seat_fb_position', 500)
             features_df.at[current_user_index, 'backrest_position'] = seat_position.get('backrest_position', 500)
             features_df.to_csv(constants.FEATURES_ALL_CSV_PATH, index=False)  # 保存更新后的数据
-            print(f"已更新用户 {self.current_user} 的座椅位置数据。")
+            print(f"已更新用户 {self.current_user_id} 的座椅位置数据。")
             # 同时更新用户信息CSV文件
             user_info_df = pd.read_csv(constants.USER_INFO_CSV_PATH)
-            user_info_row = user_info_df[user_info_df['user_id'] == self.current_user]
+            user_info_row = user_info_df[user_info_df['user_id'] == self.current_user_id]
             if not user_info_row.empty:
                 current_user_info_index = user_info_row.index[0]
                 user_info_df.at[current_user_info_index, 'cushion_position'] = seat_position.get('cushion_position', 500)
@@ -115,7 +116,7 @@ class FaceSeatControl:
                 user_info_df.at[current_user_info_index, 'seat_fb_position'] = seat_position.get('seat_fb_position', 500)
                 user_info_df.at[current_user_info_index, 'backrest_position'] = seat_position.get('backrest_position', 500)
                 user_info_df.to_csv(constants.USER_INFO_CSV_PATH, index=False)
-                print(f"已更新用户 {self.current_user} 的用户信息数据。")
+                print(f"已更新用户 {self.current_user_id} 的用户信息数据。")
             # 保存到座椅控制器
             save_success = self.send_command(constants.SAVE_POSITION_COMMAND)
             if save_success:
@@ -123,7 +124,7 @@ class FaceSeatControl:
             else:
                 response = ""
             if constants.SAVE_POSITION_CONFIRM_RESPONSE in response:
-                print(f"已保存用户 {self.current_user} 的座椅位置到控制器。")
+                print(f"已保存用户 {self.current_user_id} 的座椅位置到控制器。")
                 return True
             else:
                 print(f"座椅位置保存未确认，控制器响应: {response}")
@@ -134,12 +135,12 @@ class FaceSeatControl:
 
     def send_user_to_seat_controller(self):
         user_info_df = pd.read_csv(constants.USER_INFO_CSV_PATH)
-        user_row = user_info_df[user_info_df['user_id'] == self.current_user]
+        user_row = user_info_df[user_info_df['user_id'] == self.current_user_id]
         if user_row.empty:
-            print(f"未找到用户 {self.current_user} 的座椅数据，无法构建调整命令。")
+            print(f"未找到用户 {self.current_user_id} 的座椅数据，无法构建调整命令。")
             return False
         # 构建座椅调整命令
-        seat_adjust_command = f"USER:{self.current_user},"
+        seat_adjust_command = f"USER:{self.current_user_id},"
         seat_adjust_command += f"CUSHION:{user_row.iloc[0]['cushion_position']},"
         seat_adjust_command += f"SEAT_UD:{user_row.iloc[0]['seat_ud_position']},"
         seat_adjust_command += f"SEAT_FB:{user_row.iloc[0]['seat_fb_position']},"
@@ -193,7 +194,7 @@ def main():
         "backrest_position": 620
     }
     face_seat_control = FaceSeatControl()  # 创建FaceSeatControl实例
-    face_seat_control.current_user = "Ju Jingyi"  # 设置当前用户ID示例
+    face_seat_control.current_user_id = "Ju Jingyi"  # 设置当前用户ID示例
     try:
         face_seat_control.connect_to_seat_controller()  # 连接到座椅控制器
         face_seat_control.send_command("ADJUST_SEAT_TO_USER_1")  # 发送调整命令示例
@@ -203,7 +204,3 @@ def main():
 
     except RuntimeError as e:
         print(e)
-
-
-if __name__ == "__main__":
-    main()  # 运行主函数
