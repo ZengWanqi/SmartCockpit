@@ -1,4 +1,5 @@
 import utilities
+import constants
 import face_registration  # 导入人脸注册模块
 import face_feature_extract  # 导入特征提取模块
 import face_recognition  # 导入人脸识别模块
