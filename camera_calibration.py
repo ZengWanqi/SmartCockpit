@@ -1,7 +1,7 @@
 import cv2
 import constants
 import numpy as np
-from typing import List, Tuple
+from typing import Tuple
 
 
 class CameraCalibration:
@@ -26,14 +26,15 @@ class CameraCalibration:
         :param gray:  输入灰度图像
         :return:
             bool: 是否找到角点
-            np.ndarray: 角点坐标
+            np.ndarray or None: 如果找到角点（bool为True），则为包含角点坐标的 np.ndarray；
+                                如果未找到角点（bool为False），则可能为 None 或空的 np.ndarray。
         """
         # 寻找棋盘格的角点
         flags = cv2.CALIB_CB_ADAPTIVE_THRESH | cv2.CALIB_CB_NORMALIZE_IMAGE | cv2.CALIB_CB_FILTER_QUADS
-        ret, corners = cv2.findChessboardCorners(gray, self.chessboard_size, flags=flags)
-        return ret, corners
+        is_corner_found, corners = cv2.findChessboardCorners(gray, self.chessboard_size, flags=flags)
+        return is_corner_found, corners
 
-    def append_corners(self, gray: np.ndarray, corners: np.nanprod) -> np.ndarray:
+    def append_corners(self, gray: np.ndarray, corners: np.ndarray) -> np.ndarray:
         """
         添加角点到图像点列表，并绘制识别结果
         :param gray: 输入灰度图像
@@ -41,7 +42,8 @@ class CameraCalibration:
         :return:
             np.ndarray: 绘制了识别结果的图像
         """
-        self.image_size = gray.shape[::-1]  # 图像大小（分辨率）: (宽, 高)
+        if self.image_size == (0, 0):
+            self.image_size = gray.shape[::-1]  # 图像大小（分辨率）: (宽, 高)
         # 亚像素精度优化
         cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), self.criteria)
 
@@ -110,10 +112,13 @@ def interactive_calibration():
             left_gray = cv2.cvtColor(left_frame, cv2.COLOR_BGR2GRAY)
             right_gray = cv2.cvtColor(right_frame, cv2.COLOR_BGR2GRAY)
             cv2.imshow("left", left_gray)
+            cv2.resizeWindow("left", 640, 480)
             cv2.imshow("right", right_gray)
+            cv2.resizeWindow("right", 640, 480)
+
             res = cv2.waitKey(1)
 
-            if res == 'c' or res == 'C':  # 拍摄
+            if res == ord('c') or res == ord('C'):  # 拍摄
                 result_left = left_calibrator.find_corners(left_gray)
                 result_right = right_calibrator.find_corners(right_gray)
 
@@ -124,20 +129,21 @@ def interactive_calibration():
                     # 添加角点并显示结果
                     rms_left = left_calibrator.append_corners(left_gray, result_left[1])
                     rms_right = right_calibrator.append_corners(right_gray, result_right[1])
-                    cv2.imshow("left_valid", rms_left)
-                    cv2.imshow("right_valid", rms_right)
+
+                    cv2.imshow("left_valid", cv2.resize(rms_left, (640, 480)))
+                    cv2.imshow("right_valid", cv2.resize(rms_right, (640, 480)))
                 else:
                     print("无效帧。")
                     print(f"捕获情况：左侧 -> {result_left[0]}，右侧 -> {result_right[0]}")
                     # 画出左右识别结果
                     cv2.drawChessboardCorners(left_gray, left_calibrator.chessboard_size, result_left[1], result_left[0])
-                    cv2.imshow("left_valid", left_gray)
+                    cv2.imshow("left_valid", cv2.resize(left_gray, (640, 480)))
                     cv2.drawChessboardCorners(right_gray, right_calibrator.chessboard_size, result_right[1], result_right[0])
-                    cv2.imshow("right_valid", right_gray)
+                    cv2.imshow("right_valid", cv2.resize(right_gray, (640, 480)))
                     cv2.waitKey(1)
-            elif res == 'q' or res == 'Q':
+            elif res == ord('q') or res == ord('Q'):
                 break
-            elif res == 'e' or res == 'E':
+            elif res == ord('e') or res == ord('E'):
                 left_result = left_calibrator.calculate()
                 right_result = right_calibrator.calculate()
                 print(left_result)
@@ -145,6 +151,7 @@ def interactive_calibration():
     capture.release()
     cv2.destroyAllWindows()
     return
+
 
 def main():
     interactive_calibration()
