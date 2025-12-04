@@ -8,7 +8,7 @@ class CameraCalibration:
     def __init__(self):
         self.chessboard_height = constants.CHESSBOARD_HEIGHT
         self.chessboard_width = constants.CHESSBOARD_WIDTH
-        self.chessboard_size = (self.chessboard_width, self.chessboard_height)
+        self.chessboard_size = (self.chessboard_width, self.chessboard_height)  # 棋盘格内角点数量 (宽, 高)
         self.square_size = constants.SQUARE_SIZE  # 棋盘格方块边长，单位：毫米
         self.image_size = (0, 0)  # 图像大小（分辨率）（宽, 高）
         self.image_points = []  # 存储图像点
@@ -40,7 +40,7 @@ class CameraCalibration:
         :param gray: 输入灰度图像
         :param corners: 角点坐标
         :return:
-            np.ndarray: 绘制了识别结果的图像
+            np.ndarray: 绘制了识别结果的RGB图像
         """
         if self.image_size == (0, 0):
             self.image_size = gray.shape[::-1]  # 图像大小（分辨率）: (宽, 高)
@@ -48,12 +48,13 @@ class CameraCalibration:
         cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), self.criteria)
 
         # 绘制识别结果
-        cv2.drawChessboardCorners(gray, self.chessboard_size, corners, True)
+        frame = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+        cv2.drawChessboardCorners(frame, self.chessboard_size, corners, True)
 
         # 添加结果到 image_points
         self.image_points.append(corners)
 
-        return gray
+        return frame  # 返回绘制了识别结果的图像(彩色图)
 
     def calculate(self) -> bool:
         """
@@ -125,21 +126,22 @@ def interactive_calibration():
                 if result_left[0] and result_right[0]:  # 如果左右都找到角点
                     capture_time += 1
                     print(f"有效帧已捕获！ 当前已捕获 {capture_time} 帧")
-
+                    if capture_time >= 5:
+                        print("已达到所需捕获帧数，按 'E' 键计算标定参数，或继续捕获更多帧以提高精度。")
                     # 添加角点并显示结果
-                    rms_left = left_calibrator.append_corners(left_gray, result_left[1])
-                    rms_right = right_calibrator.append_corners(right_gray, result_right[1])
+                    left_drawn = left_calibrator.append_corners(left_gray, result_left[1])
+                    right_drawn = right_calibrator.append_corners(right_gray, result_right[1])
 
-                    cv2.imshow("left_valid", cv2.resize(rms_left, (640, 480)))
-                    cv2.imshow("right_valid", cv2.resize(rms_right, (640, 480)))
+                    cv2.imshow("left_valid", cv2.resize(left_drawn, (640, 480)))
+                    cv2.imshow("right_valid", cv2.resize(right_drawn, (640, 480)))
                 else:
                     print("无效帧。")
                     print(f"捕获情况：左侧 -> {result_left[0]}，右侧 -> {result_right[0]}")
                     # 画出左右识别结果
-                    cv2.drawChessboardCorners(left_gray, left_calibrator.chessboard_size, result_left[1], result_left[0])
-                    cv2.imshow("left_valid", cv2.resize(left_gray, (640, 480)))
-                    cv2.drawChessboardCorners(right_gray, right_calibrator.chessboard_size, result_right[1], result_right[0])
-                    cv2.imshow("right_valid", cv2.resize(right_gray, (640, 480)))
+                    cv2.drawChessboardCorners(left_frame, left_calibrator.chessboard_size, result_left[1], result_left[0])
+                    cv2.imshow("left_invalid", cv2.resize(left_frame, (640, 480)))
+                    cv2.drawChessboardCorners(right_frame, right_calibrator.chessboard_size, result_right[1], result_right[0])
+                    cv2.imshow("right_invalid", cv2.resize(right_frame, (640, 480)))
                     cv2.waitKey(1)
             elif res == ord('q') or res == ord('Q'):
                 break
@@ -150,6 +152,15 @@ def interactive_calibration():
                 print(right_result)
     capture.release()
     cv2.destroyAllWindows()
+    print(f"----------------------------单目标定结果----------------------------")
+    print(f"左相机：")
+    print(f"重投影误差 RMS = {left_calibrator.rms}")
+    print(f"内参矩阵 = \n{left_calibrator.camera_matrix}")
+    print(f"畸变系数 = \n{left_calibrator.dist_coeffs.ravel()}")
+    print(f"右相机：")
+    print(f"重投影误差 RMS = {right_calibrator.rms}")
+    print(f"内参矩阵 = \n{right_calibrator.camera_matrix}")
+    print(f"畸变系数 = \n{right_calibrator.dist_coeffs.ravel()}")
     return
 
 
