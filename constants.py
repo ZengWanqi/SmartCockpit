@@ -75,3 +75,6 @@ CHESSBOARD_WIDTH = 9
 
 # 棋盘格方块大小
 SQUARE_SIZE = 20.0  # 单位：mm
+
+# 相机标定结果保存路径
+CAMERA_CALIBRATION_RESULT_PATH = "data/camera_calibration_result.npz"
