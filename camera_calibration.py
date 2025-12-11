@@ -168,25 +168,14 @@ def interactive_calibration():
                 print(right_result)
     capture.release()
     cv2.destroyAllWindows()
-    print(f"----------------------------单目标定结果----------------------------")
-    print(f"左相机：")
-    print(f"重投影误差 RMS = {left_calibrator.rms_repro_error}")
-    print(f"内参矩阵 = \n{left_calibrator.camera_matrix}")
-    print(f"畸变系数 = \n{left_calibrator.dist_coeffs.ravel()}")
-    print(f"右相机：")
-    print(f"重投影误差 RMS = {right_calibrator.rms_repro_error}")
-    print(f"内参矩阵 = \n{right_calibrator.camera_matrix}")
-    print(f"畸变系数 = \n{right_calibrator.dist_coeffs.ravel()}")
 
-    # ------------------------下面进行双目标定------------------------
+    # ------------------------进行双目标定------------------------
     obj = []  # 存储单幅图像的 3D 点
     for i in range(left_calibrator.chessboard_size[1]):  # 高度方向
         for j in range(left_calibrator.chessboard_size[0]):  # 宽度方向
             obj.append([j * left_calibrator.square_size, i * left_calibrator.square_size, 0.0])
     obj = np.array(obj, dtype=np.float32)
     object_points = [obj.copy() for _ in range(capture_time)]
-
-    # ------------------------ 执行双目标定 ------------------------
 
     # 初始化初始变量
     R = np.zeros((3, 3), dtype=np.float32)  # 旋转矩阵
@@ -208,25 +197,31 @@ def interactive_calibration():
         left_calibrator.criteria
     )
 
-    # 输出双目标定结果
-    print(f"----------------------------双目标定结果----------------------------")
-    print(f"重投影误差 RMS = {rms}")
-    print(f"旋转矩阵 R = \n{R}")
-    print(f"平移向量 T = \n{T.ravel()}")
-    print(f"本质矩阵 = \n{essential_matrix}")
-    print(f"基础矩阵 = \n{fundamental_matrix}")
+    # ---------------------- 立体校正--------------------
+    R1, R2, P1, P2, Q, validPixROI1, validPixROI2 = cv2.stereoRectify(
+        left_calibrator.camera_matrix, left_calibrator.dist_coeffs,
+        right_calibrator.camera_matrix, right_calibrator.dist_coeffs,
+        left_calibrator.image_size, R, T,
+        flags=cv2.CALIB_ZERO_DISPARITY, alpha=0
+    )
+    mapLx, mapLy = cv2.initUndistortRectifyMap(left_calibrator.camera_matrix, left_calibrator.dist_coeffs, R1, P1, left_calibrator.image_size, cv2.CV_16SC2)
+    mapRx, mapRy = cv2.initUndistortRectifyMap(right_calibrator.camera_matrix, right_calibrator.dist_coeffs, R2, P2, right_calibrator.image_size, cv2.CV_16SC2)
+
+    cv2.remap(left_gray, mapLx, mapLy, cv2.INTER_LINEAR)
+    cv2.remap(right_gray, mapRx, mapRy, cv2.INTER_LINEAR)
 
     # 保存标定结果到文件
     np.savez(constants.CAMERA_CALIBRATION_RESULT_PATH,
-             left_camera_matrix=left_calibrator.camera_matrix,
-             left_dist_coeffs=left_calibrator.dist_coeffs,
-             right_camera_matrix=right_calibrator.camera_matrix,
-             right_dist_coeffs=right_calibrator.dist_coeffs,
-             R=R,
-             T=T,
+             left_camera_matrix=left_calibrator.camera_matrix, left_dist_coeffs=left_calibrator.dist_coeffs,
+             right_camera_matrix=right_calibrator.camera_matrix, right_dist_coeffs=right_calibrator.dist_coeffs,
+             R=R, T=T, R1=R1, R2=R2, P1=P1, P2=P2, Q=Q,
              essential_matrix=essential_matrix,
-             fundamental_matrix=fundamental_matrix)
+             fundamental_matrix=fundamental_matrix,
+             validPixROI1=validPixROI1, validPixROI2=validPixROI2,
+             mapLx=mapLx, mapLy=mapLy, mapRx=mapRx, mapRy=mapRy)
+
     print(f"标定结果已保存到文件：{constants.CAMERA_CALIBRATION_RESULT_PATH}")
+
     return
 
 
@@ -248,10 +243,19 @@ def show_calibration_parameters():
     print(data['essential_matrix'])
     print("基础矩阵：")
     print(data['fundamental_matrix'])
-
+    print("立体校正参数 R1：")
+    print(data['R1'])
+    print("立体校正参数 R2：")
+    print(data['R2'])
+    print("投影矩阵 P1：")
+    print(data['P1'])
+    print("投影矩阵 P2：")
+    print(data['P2'])
+    print("重投影矩阵 Q：")
+    print(data['Q'])
 
 def main():
-    interactive_calibration()
+    # interactive_calibration()
     show_calibration_parameters()
 
 
